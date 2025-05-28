@@ -20,7 +20,7 @@ def render_build_pending():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Track Interface - Build Bekleniyor</title>
+        <title>Mountary</title>
         <style>
             * {
                 margin: 0;
