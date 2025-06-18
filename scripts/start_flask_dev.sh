@@ -1,1 +1,1 @@
-python3 main.py
+cd ./backend && python3 app.py

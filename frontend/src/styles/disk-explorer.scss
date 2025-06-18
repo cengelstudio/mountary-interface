@@ -1,0 +1,138 @@
+.disk-explorer {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+
+  &__breadcrumbs {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+
+    &-item {
+      background: none;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      color: #2563eb;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #eff6ff;
+      }
+    }
+
+    &-separator {
+      color: #9ca3af;
+      margin: 0 0.25rem;
+    }
+  }
+
+  &__list {
+    padding: 0.5rem;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #f9fafb;
+    }
+
+    &-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+      flex-shrink: 0;
+
+      svg {
+        width: 1.5rem;
+        height: 1.5rem;
+        color: #2563eb;
+      }
+    }
+
+    &-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #111827;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &-details {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+
+      span {
+        &:nth-child(2) {
+          color: #9ca3af;
+        }
+      }
+    }
+  }
+}
+
+// Loading state
+.disk-detail__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 1rem;
+  color: #6b7280;
+
+  svg {
+    color: #2563eb;
+  }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+  .disk-explorer {
+    &__breadcrumbs {
+      padding: 0.5rem 0.75rem;
+    }
+
+    &__list {
+      padding: 0.25rem;
+    }
+
+    &__item {
+      padding: 0.5rem;
+
+      &-icon {
+        width: 2rem;
+        height: 2rem;
+        margin-right: 0.75rem;
+
+        svg {
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+      }
+    }
+  }
+}

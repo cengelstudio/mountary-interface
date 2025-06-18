@@ -1,8 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from ..utils.logger import log_error, log_info
 from ..utils.file_ops import ensure_disk_directory, load_json_file, save_json_file, create_snapshot
 from ..utils.content_handler import get_content_hash
 import os
+import json
+from app.socketio_instance import socketio
+from flask_socketio import emit
+import time
 
 api = Blueprint('api', __name__)
 
@@ -84,11 +88,27 @@ def get_disk_data():
                 'free': data['disk_info'].get('free'),
                 'percent': data['disk_info'].get('percent'),
                 'label': data['disk_info'].get('label'),
-                'serial': data['disk_info'].get('serial')
+                'serial': data['disk_info'].get('serial'),
+                'connected': data['disk_info'].get('connected')
             }
         })
         save_json_file(disk_file, disk_info)
         log_info("Disk bilgileri güncellendi")
+
+        # SocketIO ile disk güncelleme event'i yayınla
+        try:
+            disk_summary = {
+                'id': disk_info.get('disk_id', disk_id),
+                'name': disk_info.get('disk_details', {}).get('label') or disk_info.get('disk_details', {}).get('device') or disk_id,
+                'totalSpace': disk_info.get('disk_details', {}).get('total_size', 0),
+                'usedSpace': disk_info.get('disk_details', {}).get('used', 0),
+                'lastUpdated': disk_info.get('last_update', ''),
+                'isActive': bool(disk_info.get('disk_details', {}).get('mountpoint')),
+                'connected': disk_info.get('disk_details', {}).get('connected', None)
+            }
+            socketio.emit('disk_update', disk_summary)
+        except Exception as e:
+            log_error(f"SocketIO emit hatası: {e}")
 
         return jsonify({
             "status": "success",
@@ -101,3 +121,156 @@ def get_disk_data():
         error_msg = f"Hata oluştu: {str(e)}"
         log_error(error_msg)
         return jsonify({"status": "error", "message": str(e)}), 400
+
+@api.route('/disks', methods=['GET'])
+def list_disks():
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'data')
+    data_dir = os.path.abspath(data_dir)
+    disks = []
+    if os.path.exists(data_dir):
+        for disk_id in os.listdir(data_dir):
+            disk_path = os.path.join(data_dir, disk_id)
+            disk_file = os.path.join(disk_path, 'disk.json')
+            if os.path.isdir(disk_path) and os.path.exists(disk_file):
+                try:
+                    with open(disk_file, 'r', encoding='utf-8') as f:
+                        disk_info = json.load(f)
+                        details = disk_info.get('disk_details', {})
+                        disks.append({
+                            'id': disk_info.get('disk_id', disk_id),
+                            'name': details.get('label') or details.get('device') or disk_id,
+                            'totalSpace': details.get('total_size', 0),
+                            'usedSpace': details.get('used', 0),
+                            'lastUpdated': disk_info.get('last_update', ''),
+                            'isActive': bool(details.get('mountpoint')),
+                            'connected': details.get('connected', None)
+                        })
+                except Exception as e:
+                    continue
+    return jsonify({'disks': disks})
+
+@socketio.on('connect')
+def handle_connect():
+    import os
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'data')
+    data_dir = os.path.abspath(data_dir)
+    disks = []
+    if os.path.exists(data_dir):
+        for disk_id in os.listdir(data_dir):
+            disk_path = os.path.join(data_dir, disk_id)
+            disk_file = os.path.join(disk_path, 'disk.json')
+            if os.path.isdir(disk_path) and os.path.exists(disk_file):
+                try:
+                    with open(disk_file, 'r', encoding='utf-8') as f:
+                        disk_info = json.load(f)
+                        details = disk_info.get('disk_details', {})
+                        disks.append({
+                            'id': disk_info.get('disk_id', disk_id),
+                            'name': details.get('label') or details.get('device') or disk_id,
+                            'totalSpace': details.get('total_size', 0),
+                            'usedSpace': details.get('used', 0),
+                            'lastUpdated': disk_info.get('last_update', ''),
+                            'isActive': bool(details.get('mountpoint')),
+                            'connected': details.get('connected', None)
+                        })
+                except Exception as e:
+                    continue
+    socketio.emit('all_disks', disks)
+
+@socketio.on('get_disk_stats')
+def handle_get_disk_stats(disk_id):
+    import os
+    disk_path = os.path.join('data', disk_id)
+    disk_file = os.path.join(disk_path, 'disk.json')
+    contents_file = os.path.join(disk_path, 'contents.json')
+
+    # Disk bilgileri
+    disk_info = {}
+    if os.path.exists(disk_file):
+        with open(disk_file, 'r', encoding='utf-8') as f:
+            disk_info = json.load(f)
+    details = disk_info.get('disk_details', {})
+
+    # Dosya/klasör içerikleri
+    contents = []
+    if os.path.exists(contents_file):
+        with open(contents_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            contents = data.get('contents', [])
+
+    # İstatistikler
+    total_files = sum(1 for item in contents if item.get('type') == 'file')
+    total_dirs = sum(1 for item in contents if item.get('type') == 'directory')
+    largest_file = max((item for item in contents if item.get('type') == 'file'), key=lambda x: x.get('size', 0), default=None)
+    last_modified_file = max((item for item in contents if item.get('type') == 'file'), key=lambda x: x.get('modified', ''), default=None)
+
+    # Dosya türleri
+    file_types = {}
+    for item in contents:
+        if item.get('type') == 'file':
+            ext = os.path.splitext(item.get('name', ''))[1][1:].lower() or 'other'
+            if ext not in file_types:
+                file_types[ext] = {'count': 0, 'totalSize': 0}
+            file_types[ext]['count'] += 1
+            file_types[ext]['totalSize'] += item.get('size', 0)
+
+    stats = {
+        'name': details.get('label') or details.get('device') or disk_id,
+        'totalSpace': details.get('total_size', 0),
+        'usedSpace': details.get('used', 0),
+        'totalFiles': total_files,
+        'totalDirectories': total_dirs,
+        'largestFile': largest_file,
+        'lastModifiedFile': last_modified_file,
+        'fileTypes': file_types,
+    }
+    emit('disk_stats', stats)
+
+def normalize_path(p):
+    return p.rstrip('/').lower() if p else ''
+
+def find_dir_contents(all_items, target_path):
+    for item in all_items:
+        if item.get('type') == 'directory' and item.get('path') == target_path:
+            return item.get('contents', [])
+        if item.get('type') == 'directory' and 'contents' in item:
+            found = find_dir_contents(item['contents'], target_path)
+            if found is not None:
+                return found
+    return None
+
+@socketio.on('get_file_system')
+def handle_get_file_system(data):
+    import os
+    disk_id = data['diskId']
+    path = data['path']
+    disk_path = os.path.join('data', disk_id)
+    contents_file = os.path.join(disk_path, 'contents.json')
+
+    items = []
+    if os.path.exists(contents_file):
+        with open(contents_file, 'r', encoding='utf-8') as f:
+            data_json = json.load(f)
+            all_items = data_json.get('contents', [])
+            if path == '/' or path == '':
+                disk_file = os.path.join(disk_path, 'disk.json')
+                mountpoint = None
+                if os.path.exists(disk_file):
+                    with open(disk_file, 'r', encoding='utf-8') as df:
+                        disk_info = json.load(df)
+                        mountpoint = disk_info.get('disk_details', {}).get('mountpoint', None)
+                if mountpoint:
+                    items = [
+                        item for item in all_items
+                        if normalize_path(os.path.dirname(item.get('path', ''))) == normalize_path(mountpoint)
+                    ]
+                else:
+                    items = all_items
+            else:
+                found = find_dir_contents(all_items, path)
+                if found is not None:
+                    items = found
+    folders = [item for item in items if item.get('type') == 'directory']
+    files = sorted([item for item in items if item.get('type') == 'file'], key=lambda x: x.get('size', 0), reverse=True)
+    sorted_items = folders + files
+    emit('file_system_update', {'path': path, 'items': sorted_items})

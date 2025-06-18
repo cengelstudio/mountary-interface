@@ -1,5 +1,7 @@
-from flask import render_template, jsonify, send_from_directory
+from flask import render_template, jsonify, send_from_directory, request
 import os
+from users import USERS
+from app.api.routes import api
 
 def is_build_available(app):
     """Check if React build files are available."""
@@ -172,3 +174,74 @@ def register_routes(app):
             "build_available": is_build_available(app),
             "message": "Build is ready" if is_build_available(app) else "Build pending"
         })
+
+    @app.route('/api/login', methods=['POST'])
+    def login():
+        data = request.get_json()
+
+        if not data or 'username' not in data or 'password' not in data:
+            return jsonify({
+                "success": False,
+                "message": "Username and password are required"
+            }), 400
+
+        username = data['username']
+        password = data['password']
+
+        if username not in USERS:
+            return jsonify({
+                "success": False,
+                "message": "Invalid username or password"
+            }), 401
+
+        user = USERS[username]
+        if user['password'] != password:
+            return jsonify({
+                "success": False,
+                "message": "Invalid username or password"
+            }), 401
+
+        return jsonify({
+            "success": True,
+            "message": "Login successful",
+            "user": {
+                "username": username,
+                "is_admin": user['is_admin'],
+                "token": user['token']
+            }
+        })
+
+    @app.route('/api/check_token', methods=['POST'])
+    def check_token():
+        data = request.get_json()
+
+        if not data or 'token' not in data:
+            return jsonify({
+                "success": False,
+                "message": "Token is required"
+            }), 400
+
+        token = data['token']
+
+        # Find user with matching token
+        user = None
+        for username, user_data in USERS.items():
+            if user_data['token'] == token:
+                user = {
+                    "username": username,
+                    "is_admin": user_data['is_admin']
+                }
+                break
+
+        if not user:
+            return jsonify({
+                "success": False,
+                "message": "Invalid token"
+            }), 401
+
+        return jsonify({
+            "success": True,
+            "user": user
+        })
+
+    app.register_blueprint(api, url_prefix='/api')

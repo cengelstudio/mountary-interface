@@ -1,10 +1,10 @@
 import React from 'react';
+import Dashboard from './Dashboard';
 
 const Home: React.FC = () => {
   return (
     <div className="home">
-      <h1>Hoş Geldiniz</h1>
-      <p>Bu React ile oluşturulmuş bir template örneğidir.</p>
+      <Dashboard />
     </div>
   );
 };

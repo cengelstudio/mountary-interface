@@ -1,0 +1,128 @@
+.disk-stats {
+  padding: 1rem;
+
+  &__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  &__item {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+  }
+
+  &__value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  &__section {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #111827;
+      margin: 0 0 1rem 0;
+    }
+  }
+
+  &__file-info {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    padding: 1rem;
+  }
+
+  &__file-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #111827;
+    margin-bottom: 0.25rem;
+  }
+
+  &__file-details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+
+    span:nth-child(2) {
+      color: #9ca3af;
+    }
+  }
+
+  &__file-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  &__file-type {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    padding: 1rem;
+  }
+
+  &__file-type-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  &__file-type-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #111827;
+  }
+
+  &__file-type-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+  }
+
+  &__file-type-size {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+}
+
+@media (max-width: 768px) {
+  .disk-stats {
+    padding: 0.75rem;
+
+    &__row {
+      grid-template-columns: 1fr;
+    }
+
+    &__section {
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    &__file-types {
+      grid-template-columns: 1fr;
+    }
+  }
+}

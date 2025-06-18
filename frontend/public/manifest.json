@@ -1,0 +1,28 @@
+{
+  "short_name": "Mountary",
+  "name": "Mountary",
+  "description": "The interface part of a project designed for media companies to keep track of portable external drives (e.g., SSDs, HDDs, or SD cards), allowing remote monitoring of their content, specifications, and the last used computers.",
+  "icons": [
+    {
+      "src": "cengelstudio-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "cengelstudio-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
+  "orientation": "portrait",
+  "scope": "/",
+  "dir": "ltr",
+  "lang": "en",
+  "related_applications": [],
+  "owner": "Metehan Alp Saral",
+  "contact_email": "me@metehansaral.com"
+}
