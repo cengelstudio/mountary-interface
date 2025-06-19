@@ -47,9 +47,11 @@ const Disks: React.FC = () => {
 
         {/* Disk Usage Overview */}
         <section className="dashboard__section">
-          <div className="dashboard__section-header" style={{ display: 'flex', alignItems: 'center', minHeight: 32 }}>
-            <h2 style={{ flex: 'none' }}>Disk Kullanımı</h2>
-            <span style={{ marginLeft: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2563eb', color: 'white', borderRadius: '999px', padding: '2px 12px', fontSize: 14, fontWeight: 600, height: 24, minWidth: 28, lineHeight: 1 }}>{disks.length}</span>
+          <div className="dashboard__section-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <h2>Disk Kullanımı</h2>
+              <span className="dashboard__badge">{disks.length}</span>
+            </div>
           </div>
           <div className="dashboard__section-content">
             <div className="dashboard__stats">
@@ -107,7 +109,10 @@ const Disks: React.FC = () => {
         {/* Disk List */}
         <section className="dashboard__section">
           <div className="dashboard__section-header">
-            <h2>Tüm Diskler</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <h2>Tüm Diskler</h2>
+              <span className="dashboard__badge">{disks.length}</span>
+            </div>
           </div>
           <div className="dashboard__section-content">
             <div className="disk-list">

@@ -80,6 +80,21 @@
     }
   }
 
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2563eb;
+    color: white;
+    border-radius: 9999px;
+    padding: 0.125rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    height: 1.5rem;
+    min-width: 1.75rem;
+    line-height: 1;
+  }
+
   &__stats {
     display: grid;
     grid-template-columns: 1fr;

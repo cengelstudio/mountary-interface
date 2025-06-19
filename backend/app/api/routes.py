@@ -199,20 +199,58 @@ def handle_get_disk_stats(disk_id):
             contents = data.get('contents', [])
 
     # İstatistikler
-    total_files = sum(1 for item in contents if item.get('type') == 'file')
-    total_dirs = sum(1 for item in contents if item.get('type') == 'directory')
+    def count_items(items, parent_path=''):
+        file_count = 0
+        dir_count = 0
+        for item in items:
+            current_path = os.path.join(parent_path, item.get('name', ''))
+            if item.get('type') == 'file':
+                file_count += 1
+            elif item.get('type') == 'directory':
+                dir_count += 1
+                if 'contents' in item:
+                    sub_files, sub_dirs = count_items(item['contents'], current_path)
+                    file_count += sub_files
+                    dir_count += sub_dirs
+        return file_count, dir_count
+
+    total_files, total_dirs = count_items(contents)
     largest_file = max((item for item in contents if item.get('type') == 'file'), key=lambda x: x.get('size', 0), default=None)
-    last_modified_file = max((item for item in contents if item.get('type') == 'file'), key=lambda x: x.get('modified', ''), default=None)
+
+    # Son değiştirilen dosyayı bul ve boyut bilgisini ekle
+    def find_last_modified_file(items):
+        last_modified = None
+        for item in items:
+            if item.get('type') == 'file':
+                if not last_modified or item.get('modified', '') > last_modified.get('modified', ''):
+                    last_modified = {
+                        'name': item.get('name'),
+                        'modifiedAt': item.get('modified'),
+                        'path': item.get('path', ''),
+                        'size': item.get('size', 0)
+                    }
+            elif item.get('type') == 'directory' and 'contents' in item:
+                sub_last_modified = find_last_modified_file(item['contents'])
+                if sub_last_modified and (not last_modified or sub_last_modified['modifiedAt'] > last_modified.get('modified', '')):
+                    last_modified = sub_last_modified
+        return last_modified
+
+    last_modified_file = find_last_modified_file(contents)
 
     # Dosya türleri
     file_types = {}
-    for item in contents:
-        if item.get('type') == 'file':
-            ext = os.path.splitext(item.get('name', ''))[1][1:].lower() or 'other'
-            if ext not in file_types:
-                file_types[ext] = {'count': 0, 'totalSize': 0}
-            file_types[ext]['count'] += 1
-            file_types[ext]['totalSize'] += item.get('size', 0)
+    def collect_file_types(items):
+        for item in items:
+            if item.get('type') == 'file':
+                ext = os.path.splitext(item.get('name', ''))[1][1:].lower() or 'other'
+                if ext not in file_types:
+                    file_types[ext] = {'count': 0, 'totalSize': 0}
+                file_types[ext]['count'] += 1
+                file_types[ext]['totalSize'] += item.get('size', 0)
+            elif item.get('type') == 'directory' and 'contents' in item:
+                collect_file_types(item['contents'])
+
+    collect_file_types(contents)
 
     stats = {
         'name': details.get('label') or details.get('device') or disk_id,
@@ -220,7 +258,6 @@ def handle_get_disk_stats(disk_id):
         'usedSpace': details.get('used', 0),
         'totalFiles': total_files,
         'totalDirectories': total_dirs,
-        'largestFile': largest_file,
         'lastModifiedFile': last_modified_file,
         'fileTypes': file_types,
     }
