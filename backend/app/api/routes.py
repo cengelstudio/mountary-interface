@@ -321,3 +321,36 @@ def handle_get_file_system(data):
         folder['size'] = get_directory_size(folder)
     sorted_items = folders + files
     emit('file_system_update', {'path': path, 'items': sorted_items})
+
+@socketio.on('get_snapshots')
+def handle_get_snapshots(data):
+    import os
+    disk_id = data['diskId']
+    disk_path = os.path.join('data', disk_id, 'snapshots')
+    snapshots = []
+    if os.path.exists(disk_path):
+        for fname in sorted(os.listdir(disk_path), reverse=True):
+            if fname.endswith('.json'):
+                # Dosya adı: snapshot_YYYYMMDD_HHMMSS.json
+                try:
+                    timestamp = fname.replace('snapshot_', '').replace('.json', '')
+                    snapshots.append({
+                        'filename': fname,
+                        'timestamp': timestamp
+                    })
+                except Exception:
+                    continue
+    emit('snapshots_list', {'snapshots': snapshots})
+
+@socketio.on('get_snapshot_contents')
+def handle_get_snapshot_contents(data):
+    import os
+    disk_id = data['diskId']
+    filename = data['filename']
+    snapshot_path = os.path.join('data', disk_id, 'snapshots', filename)
+    if os.path.exists(snapshot_path):
+        with open(snapshot_path, 'r', encoding='utf-8') as f:
+            snapshot_data = json.load(f)
+        emit('snapshot_contents', {'filename': filename, 'contents': snapshot_data.get('contents', [])})
+    else:
+        emit('snapshot_contents', {'filename': filename, 'contents': []})
