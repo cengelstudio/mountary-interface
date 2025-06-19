@@ -276,6 +276,13 @@ def find_dir_contents(all_items, target_path):
                 return found
     return None
 
+def get_directory_size(item):
+    if item.get('type') == 'file':
+        return item.get('size', 0)
+    elif item.get('type') == 'directory' and 'contents' in item:
+        return sum(get_directory_size(child) for child in item['contents'])
+    return 0
+
 @socketio.on('get_file_system')
 def handle_get_file_system(data):
     import os
@@ -309,5 +316,8 @@ def handle_get_file_system(data):
                     items = found
     folders = [item for item in items if item.get('type') == 'directory']
     files = sorted([item for item in items if item.get('type') == 'file'], key=lambda x: x.get('size', 0), reverse=True)
+    # Klasör boyutlarını ekle
+    for folder in folders:
+        folder['size'] = get_directory_size(folder)
     sorted_items = folders + files
     emit('file_system_update', {'path': path, 'items': sorted_items})

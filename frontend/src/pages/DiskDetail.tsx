@@ -223,7 +223,7 @@ const DiskDetail: React.FC = () => {
                       {item.name}
                     </div>
                     <div className="file-explorer__column file-explorer__column--size">
-                      {item.type === 'file' ? formatBytes(item.size || 0) : '-'}
+                      {formatBytes(item.size || 0)}
                     </div>
                     <div className="file-explorer__column file-explorer__column--modified">
                       {item.modifiedAt ? formatDistanceToNow(new Date(item.modifiedAt), { addSuffix: true, locale: tr }) : '-'}
